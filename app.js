@@ -1,10 +1,10 @@
+require('dotenv').config();
 const express = require("express");
 const session = require("express-session");
 const mongoose = require("mongoose");
 const path = require("path");
-const albumRoutes = require("../Photothèque/routes/album.routes");
+const albumRoutes = require("./routes/album.routes");
 
-const config = require("./config/config.json")
 
 const app = express();
 
@@ -23,10 +23,9 @@ app.use(express.static("public"));
 app.set("trust proxy", 1);
 app.use(
   session({
-    secret: config.sessionSecret,
+    secret: process.env.SECRET_SESSION,
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: true },
   })
 );
 
