@@ -1,10 +1,12 @@
 const Album = require("../models/Album");
 const path = require("path");
-const fs = require("fs");
+const fs = require('fs-extra');
+const rimraf = require('rimraf');
+
 
 const albums = async (req, res) => {
   const albums = await Album.find();
-  console.log(albums);
+
   res.render("albums", {
     title: "Mes albums",
     albums,
@@ -16,11 +18,10 @@ const album = async (req, res) => {
     const idAlbum = req.params.id;
     const album = await Album.findById(idAlbum);
 
-    console.log(album);
-
     res.render("album", {
-      title: "Album",
+      title: `Mon Album ${album.title}`,
       album,
+      errors: req.flash("error"),
     });
   } catch (err) {
     res.redirect("/404");
@@ -31,20 +32,61 @@ const addImage = async (req, res) => {
   const idAlbum = req.params.id;
   const album = await Album.findById(idAlbum);
 
-  console.log(req.files);
-  const imageName = req.files.image.name;
+  if (!req?.files?.image) {
+    req.flash("error", "Aucun fichier trouvé");
+    res.redirect(`/albums/${idAlbum}`);
+    return;
+  }
+
+  const image = req.files.image;
+  if (image.mimetype != "image/jpeg" && image.mimetype != "image/png") {
+    req.flash("error", "Fichier jpeg et png accepté uniquement");
+    res.redirect(`/albums/${idAlbum}`);
+    return;
+  }
 
   const folderPath = path.join(__dirname, "../public/uploads", idAlbum);
-  fs.mkdirSync(folderPath, { recursive: true});
+  fs.mkdirSync(folderPath, { recursive: true });
 
+  const imageName = image.name;
   const localPath = path.join(folderPath, imageName);
-  await req.files.image.mv(localPath);
+  await image.mv(localPath);
 
   album.images.push(imageName);
   await album.save();
 
   res.redirect(`/albums/${idAlbum}`);
 };
+
+const deleteImage = async (req, res) => {
+  const idAlbum = req.params.id;
+  const album = await Album.findById(idAlbum);
+
+  const imageIdx = req.params.imageIdx;
+  const image = album.images[imageIdx];
+
+  if (!image) {
+    res.redirect(`/albums/${idAlbum}`);
+    return;
+  }
+  album.images.splice(imageIdx, 1);
+  await album.save();
+
+  const imagePath = path.join(__dirname, "../public/uploads", idAlbum, image)
+  fs.unlinkSync(imagePath)
+
+  res.redirect(`/albums/${idAlbum}`);
+};
+
+const deleteAlbum = async (req, res) => {
+  const idAlbum = req.params.id
+  await Album.findByIdAndDelete(idAlbum)
+
+  const albumPath = path.join(__dirname, "../public/uploads", idAlbum)
+
+  await fs.remove(albumPath)
+  res.redirect("/albums");
+}
 
 const createAlbumForm = (req, res) => {
   res.render("new-album", {
@@ -76,4 +118,6 @@ module.exports = {
   addImage,
   createAlbumForm,
   createAlbum,
+  deleteImage,
+  deleteAlbum,
 };
