@@ -1,19 +1,19 @@
 const Album = require("../models/Album");
+const catchAsync = require("../helpers/catchAsync")
 const path = require("path");
 const fs = require('fs-extra');
-const rimraf = require('rimraf');
 
 
-const albums = async (req, res) => {
+const albums = catchAsync(async (req, res) => {
   const albums = await Album.find();
 
   res.render("albums", {
     title: "Mes albums",
     albums,
   });
-};
+});
 
-const album = async (req, res) => {
+const album = catchAsync(async (req, res) => {
   try {
     const idAlbum = req.params.id;
     const album = await Album.findById(idAlbum);
@@ -26,9 +26,9 @@ const album = async (req, res) => {
   } catch (err) {
     res.redirect("/404");
   }
-};
+});
 
-const addImage = async (req, res) => {
+const addImage = catchAsync(async (req, res) => {
   const idAlbum = req.params.id;
   const album = await Album.findById(idAlbum);
 
@@ -56,9 +56,9 @@ const addImage = async (req, res) => {
   await album.save();
 
   res.redirect(`/albums/${idAlbum}`);
-};
+});
 
-const deleteImage = async (req, res) => {
+const deleteImage = catchAsync(async (req, res) => {
   const idAlbum = req.params.id;
   const album = await Album.findById(idAlbum);
 
@@ -76,9 +76,9 @@ const deleteImage = async (req, res) => {
   fs.unlinkSync(imagePath)
 
   res.redirect(`/albums/${idAlbum}`);
-};
+});
 
-const deleteAlbum = async (req, res) => {
+const deleteAlbum = catchAsync(async (req, res) => {
   const idAlbum = req.params.id
   await Album.findByIdAndDelete(idAlbum)
 
@@ -86,16 +86,16 @@ const deleteAlbum = async (req, res) => {
 
   await fs.remove(albumPath)
   res.redirect("/albums");
-}
+})
 
-const createAlbumForm = (req, res) => {
+const createAlbumForm = catchAsync(async(req, res) => {
   res.render("new-album", {
     title: "Nouvel album",
     errors: req.flash("error"),
   });
-};
+});
 
-const createAlbum = async (req, res) => {
+const createAlbum = catchAsync(async (req, res) => {
   try {
     if (!req.body.albumTitle) {
       req.flash("error", "Le titre ne doit pas etre vide");
@@ -110,7 +110,7 @@ const createAlbum = async (req, res) => {
     req.flash("error", "Erreur lors de la creation de l'album");
     res.redirect("/albums/create");
   }
-};
+});
 
 module.exports = {
   albums,

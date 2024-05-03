@@ -40,6 +40,12 @@ app.use((req, res) => {
   res.send("Page non trouvée");
 });
 
+app.use((err, req, res, next) => {
+  console.log(err);
+  res.status(500)
+  res.send("Erreur interne du serveur")
+})
+
 app.listen(3000, () => {
   console.log("Appli lancé sur le port 3000");
 });
